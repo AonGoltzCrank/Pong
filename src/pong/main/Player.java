@@ -6,6 +6,8 @@ import java.util.Arrays;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
+import pong.main.comms.OutputData;
+
 public class Player extends PhysicsGameObject {
 
 	private static double x = 40;
@@ -103,6 +105,14 @@ public class Player extends PhysicsGameObject {
 
 	public double getPositionY() {
 		return y;
+	}
+
+	public double getPosition(byte type) {
+		if (type == OutputData.X)
+			return x;
+		else if (type == OutputData.Y)
+			return y;
+		throw new IllegalArgumentException("type must be 0 or 1.");
 	}
 
 }

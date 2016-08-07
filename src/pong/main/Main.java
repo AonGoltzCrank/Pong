@@ -8,7 +8,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Random;
@@ -66,7 +65,7 @@ public class Main implements Runnable {
 	}
 
 	public Main(boolean isOnline) {
-		if (this.isOnline = isOnline)
+		if (Main.isOnline = isOnline)
 			determineHost();
 	}
 
