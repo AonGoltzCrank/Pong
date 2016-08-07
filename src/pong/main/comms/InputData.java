@@ -3,6 +3,7 @@ package pong.main.comms;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import pong.main.Main;
 import pong.main.WorldManager;
 
 public class InputData extends Thread {
@@ -25,7 +26,8 @@ public class InputData extends Thread {
 				WorldManager.getInstance(null).updateObjectLocation("OnlinePlayer", otherPlayerPosX, otherPlayerPosY);
 				WorldManager.getInstance(null).updateObjectLocation("Ball", ballX, ballY);
 			} catch (IOException ex) {
-				ex.printStackTrace();
+				System.out.println("Stopping comms...");
+				Main.stop();
 				break;
 			}
 		}

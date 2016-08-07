@@ -4,6 +4,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import pong.main.Ball;
+import pong.main.Main;
 import pong.main.Player;
 
 public class OutputData extends Thread {
@@ -37,7 +38,8 @@ public class OutputData extends Thread {
 				out.writeDouble(ball.getPosition(X));
 				out.writeDouble(ball.getPosition(Y));
 			} catch (IOException ex) {
-				ex.printStackTrace();
+				System.out.println("Stopping comms...");
+				Main.stop();
 				break;
 			}
 		}

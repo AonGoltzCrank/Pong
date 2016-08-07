@@ -22,7 +22,7 @@ import pong.main.comms.OutputData;
 
 public class Main implements Runnable {
 
-	private boolean $running = true;
+	private static boolean $running = true;
 	private long $wnd;
 
 	private final int width = 800;
@@ -252,5 +252,9 @@ public class Main implements Runnable {
 			ex.printStackTrace();
 		}
 		return "0.0.0.0";
+	}
+
+	public static void stop() {
+		$running = false;
 	}
 }
