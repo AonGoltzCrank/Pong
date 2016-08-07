@@ -22,7 +22,7 @@ public class OnlinePlayer extends PhysicsGameObject {
 	public void render() {
 		GL11.glBegin(GL11.GL_QUADS);
 		{
-			GL11.glColor3f(.5f, .5f, .5f);
+			GL11.glColor3f(1f, .25f, .25f);
 			GL11.glVertex3d(x, y, 0);
 			GL11.glVertex3d(x, y + height, 0);
 			GL11.glVertex3d(x + width, y + height, 0);

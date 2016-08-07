@@ -215,6 +215,12 @@ public class Main implements Runnable {
 		} catch (Exception ex) {
 			inData.interrupt();
 			outData.interrupt();
+		} finally {
+			try {
+				inData.interrupt();
+				outData.interrupt();
+			} catch (NullPointerException ex) {
+			}
 		}
 	}
 
