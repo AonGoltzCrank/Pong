@@ -45,12 +45,9 @@ public class OnlinePlayer extends PhysicsGameObject {
 		return side;
 	}
 
-	public double getPositionY() {
-		return y;
-	}
-
-	public void setPosY(double playerPos) {
-		y = playerPos;
+	public void setPosition(double posX, double posY) {
+		x = posX;
+		y = posY;
 	}
 
 }

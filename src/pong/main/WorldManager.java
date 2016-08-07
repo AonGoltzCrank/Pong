@@ -126,8 +126,13 @@ public class WorldManager extends BaseGameObject {
 
 	// ===================================Online===================
 
-	public void updatePlayer2Pos(double playerPos) {
-		BaseGameObject onlinePlayer = getObject("OnlinePlayer");
-		((OnlinePlayer) onlinePlayer).setPosY(playerPos);
+	public void updateObjectLocation(String name, double posX, double posY) {
+		BaseGameObject bgo = getObject(name);
+		if (bgo instanceof Ball)
+			((Ball) bgo).setPosition(posX, posY);
+		else if (bgo instanceof OnlinePlayer)
+			((OnlinePlayer) bgo).setPosition(posX, posY);
+		else
+			throw new RuntimeException("No object was found with the name: " + name);
 	}
 }

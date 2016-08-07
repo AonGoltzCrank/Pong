@@ -5,8 +5,6 @@ import java.io.IOException;
 
 import pong.main.WorldManager;
 
-import static pong.main.Util.i2double;
-
 public class InputData extends Thread {
 
 	private DataInputStream in;
@@ -20,9 +18,12 @@ public class InputData extends Thread {
 	public void run() {
 		while (true) {
 			try {
-				int otherPlayerPos = in.readInt();
-				double playerPos = i2double(otherPlayerPos);
-				WorldManager.getInstance(null).updatePlayer2Pos(playerPos);
+				double otherPlayerPosX = in.readDouble();
+				double otherPlayerPosY = in.readDouble();
+				double ballX = in.readDouble();
+				double ballY = in.readDouble();
+				WorldManager.getInstance(null).updateObjectLocation("OnlinePlayer", otherPlayerPosX, otherPlayerPosY);
+				WorldManager.getInstance(null).updateObjectLocation("Ball", ballX, ballY);
 			} catch (IOException ex) {
 				ex.printStackTrace();
 				break;

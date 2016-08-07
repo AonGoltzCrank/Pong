@@ -6,6 +6,8 @@ import java.awt.Point;
 
 import org.lwjgl.opengl.GL11;
 
+import pong.main.comms.OutputData;
+
 public class Ball extends PhysicsGameObject {
 
 	private static double x = 390;
@@ -114,5 +116,18 @@ public class Ball extends PhysicsGameObject {
 
 	public Point getCenterPoint() {
 		return new Point((int) x + (int) width / 2, (int) y + (int) height / 2);
+	}
+
+	public void setPosition(double posX, double posY) {
+		x = posX;
+		y = posY;
+	}
+
+	public double getPosition(byte type) {
+		if (type == OutputData.X)
+			return x;
+		else if (type == OutputData.Y)
+			return y;
+		throw new IllegalArgumentException("type must be 0 or 1.");
 	}
 }

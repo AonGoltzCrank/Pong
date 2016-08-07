@@ -8,6 +8,9 @@ import pong.main.Player;
 
 public class OutputData extends Thread {
 
+	public static final byte X = 0;
+	public static final byte Y = 1;
+
 	private DataOutputStream out;
 	private Player you;
 	private Ball ball;
@@ -29,7 +32,10 @@ public class OutputData extends Thread {
 	public void run() {
 		while (true) {
 			try {
-				out.writeInt((int) you.getPositionY());
+				out.writeDouble(you.getPosition(X));
+				out.writeDouble(you.getPosition(Y));
+				out.writeDouble(ball.getPosition(X));
+				out.writeDouble(ball.getPosition(Y));
 			} catch (IOException ex) {
 				ex.printStackTrace();
 				break;
