@@ -9,9 +9,11 @@ import pong.main.WorldManager;
 public class InputData extends Thread {
 
 	private DataInputStream in;
+	private boolean isHost;
 
-	public InputData(DataInputStream in) {
+	public InputData(DataInputStream in, boolean isHost) {
 		this.in = in;
+		this.isHost = isHost;
 		start();
 	}
 
@@ -24,7 +26,8 @@ public class InputData extends Thread {
 				double ballX = in.readDouble();
 				double ballY = in.readDouble();
 				WorldManager.getInstance(null).updateObjectLocation("OnlinePlayer", otherPlayerPosX, otherPlayerPosY);
-				WorldManager.getInstance(null).updateObjectLocation("Ball", ballX, ballY);
+				if (!isHost)
+					WorldManager.getInstance(null).updateObjectLocation("Ball", ballX, ballY);
 			} catch (IOException ex) {
 				System.out.println("Stopping comms...");
 				Main.stop();

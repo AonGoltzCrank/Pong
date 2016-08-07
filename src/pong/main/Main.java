@@ -171,7 +171,7 @@ public class Main implements Runnable {
 				if (outData == null)
 					outData = new OutputData(out, player);
 				if (inData == null)
-					inData = new InputData(in);
+					inData = new InputData(in, isHost);
 				wManager.addObject(player);
 				wManager.addObject(onlinePlayer);
 				wManager.addObject(ball);

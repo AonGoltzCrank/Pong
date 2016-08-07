@@ -24,8 +24,8 @@ public class OutputData extends Thread {
 
 	public OutputData(DataOutputStream out, Player player, Ball ball) {
 		this.out = out;
-		you = player;
 		this.ball = ball;
+		you = player;
 		start();
 	}
 
@@ -35,8 +35,10 @@ public class OutputData extends Thread {
 			try {
 				out.writeDouble(you.getPosition(X));
 				out.writeDouble(you.getPosition(Y));
-				out.writeDouble(ball.getPosition(X));
-				out.writeDouble(ball.getPosition(Y));
+				if (ball != null) {
+					out.writeDouble(ball.getPosition(X));
+					out.writeDouble(ball.getPosition(Y));
+				}
 			} catch (IOException ex) {
 				System.out.println("Stopping comms...");
 				Main.stop();
