@@ -1,12 +1,14 @@
-package pong.main;
+package pong.main.game_objects;
 
-import static pong.main.Util.getAngle;
+import static pong.main.util.Util.getAngle;
 
 import java.awt.Point;
 
 import org.lwjgl.opengl.GL11;
 
+import pong.main.Collision;
 import pong.main.comms.OutputData;
+import pong.main.util.Rectangle;
 
 public class Ball extends PhysicsGameObject {
 

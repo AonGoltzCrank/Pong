@@ -2,6 +2,11 @@ package pong.main;
 
 import java.util.ArrayList;
 
+import pong.main.game_objects.BaseGameObject;
+import pong.main.game_objects.Court;
+import pong.main.game_objects.Player;
+import pong.main.util.Rectangle;
+
 public class CollisionsManager extends BaseGameObject {
 
 	private static CollisionsManager $instance = null;
@@ -25,33 +30,34 @@ public class CollisionsManager extends BaseGameObject {
 		bgO = wManager.getWorldObjects(bgO);
 		BaseGameObject ball = findBGO("Ball");
 		BaseGameObject player = findBGO("Player");
-		byte side = ((Player) player).getSide();
 		BaseGameObject ai = findBGO("AI");
 		BaseGameObject onlinePlayer = findBGO("OnlinePlayer");
+		BaseGameObject court = findBGO("Court");
+		byte side = ((Player) player).getSide();
 		// wManager.
 		Collision col;
 		// ===========================Ball====================================
-		if (ball.hBox.touchingEdges_Num(wManager.hBox, Rectangle.UP, false)
-				|| wManager.outsideWorldPartially(ball, wManager.TOP_BOT)) {
-			col = new Collision(ball, wManager);
+		if (ball.hBox.touchingEdges_Num(court.hBox, Rectangle.UP, false)
+				|| ((Court) court).outOfCourtPartial(ball, ((Court) court).TOP_BOT)) {
+			col = new Collision(ball, court);
 			col.addInstruction((byte) 0, Collision.FUNCTION, new Object[] { "hitObject", false, 0.0 });
-			wManager.createCollision(ball, wManager, col.getCompleteObject());
+			wManager.createCollision(ball, court, col.getCompleteObject());
 		}
-		if (ball.hBox.touchingEdges_Num(wManager.hBox, Rectangle.DOWN, false)
-				|| wManager.outsideWorldPartially(ball, wManager.TOP_BOT)) {
-			col = new Collision(ball, wManager);
+		if (ball.hBox.touchingEdges_Num(court.hBox, Rectangle.DOWN, false)
+				|| ((Court) court).outOfCourtPartial(ball, ((Court) court).TOP_BOT)) {
+			col = new Collision(ball, court);
 			col.addInstruction((byte) 0, Collision.FUNCTION, new Object[] { "hitObject", false, 0.0 });
-			wManager.createCollision(ball, wManager, col.getCompleteObject());
+			wManager.createCollision(ball, court, col.getCompleteObject());
 		}
 		// ==========================Player==================================
-		if (player.hBox.touchingEdges_Num(wManager.hBox, Rectangle.UP, false)) {
-			col = new Collision(player, wManager);
+		if (player.hBox.touchingEdges_Num(court.hBox, Rectangle.UP, false)) {
+			col = new Collision(player, court);
 			col.addInstruction((byte) 0, Collision.VARIABLE, new Object[] { "movAllowedUp", false });
-			wManager.createCollision(player, wManager, col.getCompleteObject());
-		} else if (player.hBox.touchingEdges_Num(wManager.hBox, Rectangle.DOWN, false)) {
-			col = new Collision(player, wManager);
+			wManager.createCollision(player, court, col.getCompleteObject());
+		} else if (player.hBox.touchingEdges_Num(court.hBox, Rectangle.DOWN, false)) {
+			col = new Collision(player, court);
 			col.addInstruction((byte) 0, Collision.VARIABLE, new Object[] { "movAllowedDown", false });
-			wManager.createCollision(player, wManager, col.getCompleteObject());
+			wManager.createCollision(player, court, col.getCompleteObject());
 		}
 		if (player.hBox.touchingEdges_Num(ball.hBox, (side == 0 ? Rectangle.RIGHT : Rectangle.LEFT), true)
 				|| player.hBox.inEdges(ball.hBox)) {
@@ -74,14 +80,14 @@ public class CollisionsManager extends BaseGameObject {
 		// ==============================AI=====================================
 		if (!Main.isOnline) {
 			System.out.println("Up");
-			if (ai.hBox.touchingEdges_Num(wManager.hBox, Rectangle.UP, false)) {
-				col = new Collision(ai, wManager);
+			if (ai.hBox.touchingEdges_Num(court.hBox, Rectangle.UP, false)) {
+				col = new Collision(ai, court);
 				col.addInstruction((byte) 0, Collision.VARIABLE, new Object[] { "movAllowedUp", false });
-				wManager.createCollision(ai, wManager, col.getCompleteObject());
-			} else if (ai.hBox.touchingEdges_Num(wManager.hBox, Rectangle.DOWN, false)) {
-				col = new Collision(ai, wManager);
+				wManager.createCollision(ai, court, col.getCompleteObject());
+			} else if (ai.hBox.touchingEdges_Num(court.hBox, Rectangle.DOWN, false)) {
+				col = new Collision(ai, court);
 				col.addInstruction((byte) 0, Collision.VARIABLE, new Object[] { "movAllowedDown", false });
-				wManager.createCollision(ai, wManager, col.getCompleteObject());
+				wManager.createCollision(ai, court, col.getCompleteObject());
 			}
 			if (ai.hBox.touchingEdges_Num(ball.hBox, (side == 0 ? Rectangle.LEFT : Rectangle.RIGHT), true)
 					|| ai.hBox.inEdges(ball.hBox)) {
@@ -124,7 +130,7 @@ public class CollisionsManager extends BaseGameObject {
 			}
 		}
 		// =========================World Manager==============================
-		if (!wManager.hBox.containing(ball.hBox)) {
+		if (!court.hBox.containing(ball.hBox)) {
 		}
 	}
 

@@ -1,8 +1,8 @@
-package pong.main;
+package pong.main.util;
+
+import static pong.main.util.Util.b2bit;
 
 import java.util.ArrayList;
-
-import static pong.main.Util.b2bit;
 
 public class Rectangle {
 

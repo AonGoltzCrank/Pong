@@ -2,6 +2,9 @@ package pong.main;
 
 import java.util.ArrayList;
 
+import pong.main.game_objects.BaseGameObject;
+import pong.main.util.Couple;
+
 public class Collision {
 
 	public BaseGameObject firstObj, secObj;

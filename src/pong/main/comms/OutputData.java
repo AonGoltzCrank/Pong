@@ -3,9 +3,9 @@ package pong.main.comms;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import pong.main.Ball;
 import pong.main.Main;
-import pong.main.Player;
+import pong.main.game_objects.Ball;
+import pong.main.game_objects.Player;
 
 public class OutputData extends Thread {
 

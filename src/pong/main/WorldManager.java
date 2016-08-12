@@ -1,62 +1,64 @@
 package pong.main;
 
 import java.util.ArrayList;
+import java.util.Random;
 
-import org.lwjgl.opengl.GL11;
+import pong.main.ObjectInstantiator.GameObjects;
+import pong.main.game_objects.Ball;
+import pong.main.game_objects.BaseGameObject;
+import pong.main.game_objects.BaseScreenObject;
+import pong.main.game_objects.OnlinePlayer;
+import pong.main.game_objects.Player;
+import pong.main.screens.Screen;
+import pong.main.screens.ScreenText;
+import pong.main.util.Couple;
+import pong.main.util.KeyHandler;
 
-public class WorldManager extends BaseGameObject {
+public class WorldManager extends BaseScreenObject {
 
 	private static WorldManager $instance = null;
 
-	private float x = 395;
-	private float y = 0;
-	private final float width = 10;
-	private final float height = 58;
-
-	private final int nO_Lines = 10;
-
-	public final byte TOP_BOT = 0;
-	public final byte RIGHT_LEFT = 1;
-
 	private ArrayList<BaseGameObject> wObjects = new ArrayList<BaseGameObject>();
-
+	private ArrayList<BaseScreenObject> sObjects = new ArrayList<BaseScreenObject>();
 	private KeyHandler keyHandler;
 
+	// ================== SingleTon =======================
 	private WorldManager(KeyHandler kHandler) {
 		keyHandler = kHandler;
-		hBox = new Rectangle(0, 0, 800, 600);
 	}
 
 	public static WorldManager getInstance(KeyHandler kHandler) {
 		return ($instance == null ? $instance = new WorldManager(kHandler) : $instance);
 	}
 
+	// ========== Overridden Methods ========================
 	@Override
 	public void render() {
-		for (int i = 0; i < nO_Lines; i++) {
-			GL11.glBegin(GL11.GL_QUADS);
-			{
-				GL11.glColor3f(.5f, .5f, .5f);
-				GL11.glVertex3f(x, y + (height * i + 20), 0);
-				GL11.glVertex3f(x, y + (height * i + height), 0);
-				GL11.glVertex3f(x + width, y + (height * i + height), 0);
-				GL11.glVertex3f(x + width, y + (height * i + 20), 0);
+		if (wObjects.size() != 0)
+			for (BaseGameObject bgO : wObjects)
+				bgO.render();
+		else if (sObjects.size() != 0)
+			for (BaseScreenObject bsO : sObjects) {
+				bsO.render();
 			}
-			GL11.glEnd();
-		}
-		for (BaseGameObject bgO : wObjects)
-			bgO.render();
 	}
 
 	@Override
 	public void update() {
-		for (BaseGameObject bgO : wObjects) {
-			if (bgO instanceof Player)
-				((Player) bgO).input(keyHandler.getAllPressedKeys());
-			bgO.update();
-		}
+		if (wObjects.size() != 0)
+			for (BaseGameObject bgO : wObjects) {
+				if (bgO instanceof Player)
+					((Player) bgO).input(keyHandler.getAllPressedKeys());
+				bgO.update();
+			}
+		else if (sObjects.size() != 0)
+			for (BaseScreenObject bsO : sObjects) {
+				if (bsO instanceof ScreenText)
+					bsO.update();
+			}
 	}
 
+	// ================ BaseGameObjects Functions ===================
 	/**
 	 * Adds a new BaseGameObject to the world.<br>
 	 * Only way to get it rendered.
@@ -79,11 +81,13 @@ public class WorldManager extends BaseGameObject {
 		return (bgO.containsAll(wObjects) ? bgO : wObjects);
 	}
 
+	// ====================== Collision Handling =========================
 	public void createCollision(BaseGameObject firstObj, BaseGameObject secObj,
 			Couple<Couple<ArrayList<Object[]>>> data) {
 		// >> The data we receive is divided to two and two: the first couple is
 		// object one and two. and the second couple is functions and
 		// variables.
+		// TODO: Optimized
 		Collision firstCol = new Collision(firstObj, secObj);
 		Collision secCol = new Collision(firstObj, secObj);
 		Couple<ArrayList<Object[]>> firstColInstructSet = data.get(0);
@@ -104,6 +108,7 @@ public class WorldManager extends BaseGameObject {
 		secObj.collision(secCol);
 	}
 
+	// ==================== Input Handler ==================================
 	public void setKeyHandler(KeyHandler newKHandler) {
 		if (keyHandler == null)
 			keyHandler = newKHandler;
@@ -113,18 +118,7 @@ public class WorldManager extends BaseGameObject {
 		return keyHandler;
 	}
 
-	public boolean outsideWorldPartially(BaseGameObject obj, byte dir) {
-		Rectangle rect = obj.hBox;
-		if (dir != TOP_BOT && dir != RIGHT_LEFT)
-			throw new IllegalArgumentException("Must be 0 [Top or Bottom], or 1 [Right or Left].");
-		// hBox.
-		double objHigh = (dir == TOP_BOT ? rect.getHighestY() : rect.getFurthestX()),
-				objLow = (dir == TOP_BOT ? rect.getLowestY() : rect.getClosestX());
-		return (objHigh > (dir == TOP_BOT ? hBox.getHighestY() : hBox.getFurthestX())
-				|| objLow < (dir == TOP_BOT ? hBox.getLowestY() : hBox.getClosestX()));
-	}
-
-	// ===================================Online===================
+	// ===================================Online============================
 
 	public void updateObjectLocation(String name, double posX, double posY) {
 		BaseGameObject bgo = getObject(name);
@@ -134,5 +128,36 @@ public class WorldManager extends BaseGameObject {
 			((OnlinePlayer) bgo).setPosition(posX, posY);
 		else
 			throw new RuntimeException("No object was found with the name: " + name);
+	}
+
+	// =================== World Managing ==================================
+
+	@SuppressWarnings("unchecked")
+	public void renderScreen(Screen newScreen) {
+		Class<? extends Object> screenArrayListType = newScreen.getArrayListType();
+		if (screenArrayListType == GameObjects.class) {
+			sObjects.clear();
+			wObjects.clear();
+			createItems((ArrayList<GameObjects>) newScreen.getList());
+		} else if (screenArrayListType == BaseScreenObject.class) {
+			sObjects.clear();
+			wObjects.clear();
+			sObjects = new ArrayList<BaseScreenObject>();
+		}
+	}
+
+	private void createItems(ArrayList<GameObjects> list) {
+		byte side = (byte) new Random().nextInt(2);
+		if (list.contains(GameObjects.ONLINE_PLAYER)) {
+			
+		} else
+			for (GameObjects go : list) {
+				if (go == GameObjects.BALL) {
+					wObjects.add(ObjectInstantiator.CreateNewObject(go, -1));
+				} else {
+					wObjects.add(ObjectInstantiator.CreateNewObject(go, side));
+					side = (byte) (side == 0 ? 1 : 0);
+				}
+			}
 	}
 }

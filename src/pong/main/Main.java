@@ -19,6 +19,11 @@ import org.lwjgl.opengl.GL11;
 
 import pong.main.comms.InputData;
 import pong.main.comms.OutputData;
+import pong.main.game_objects.AI;
+import pong.main.game_objects.Ball;
+import pong.main.game_objects.OnlinePlayer;
+import pong.main.game_objects.Player;
+import pong.main.util.KeyHandler;
 
 public class Main implements Runnable {
 
@@ -60,7 +65,7 @@ public class Main implements Runnable {
 	private InputData inData;
 
 	public static void main(String[] args) {
-		Main game = new Main(true);
+		Main game = new Main(false);
 		game.init_Thread();
 	}
 
@@ -115,6 +120,8 @@ public class Main implements Runnable {
 		// >> Setting up the collisions manager.
 		cManager = CollisionsManager.getInstance(wManager);
 
+		wManager.renderScreen(ScreenManager.generateScreen(ScreenManager.Screens.MAINMENU));
+
 	}
 
 	public void render() {
@@ -137,91 +144,73 @@ public class Main implements Runnable {
 	@Override
 	public void run() {
 		init();
-		if (isOnline) {
-			System.out.println("Playing in online mode...");
-			System.out.println("We are " + (isHost ? "" : "not ") + "the host.");
-			try {
-				DataOutputStream out;
-				DataInputStream in;
-				ball = new Ball();
-				if (isHost) {
-					hostToSRV_Socket = new ServerSocket(port);
-					System.out.println("Server socket connected, awaiting client...");
-					incomingClientToSRV_Socket = hostToSRV_Socket.accept();
-					System.out.println("Client Connected...");
-					out = new DataOutputStream(incomingClientToSRV_Socket.getOutputStream());
-					in = new DataInputStream(incomingClientToSRV_Socket.getInputStream());
-					byte side = (byte) new Random().nextInt(2);
-					if (side > 1)
-						side = 1;
-					player = new Player(side);
-					onlinePlayer = new OnlinePlayer((byte) (side == 1 ? 0 : 1));
-					out.writeByte((byte) (side == 1 ? 0 : 1));
-					out.flush();
-					outData = new OutputData(out, player, ball);
-				} else {
-					fromClientToSRV_Socket = new Socket(getConnectionIP(), port);
-					System.out.println("Connected to server...");
-					out = new DataOutputStream(fromClientToSRV_Socket.getOutputStream());
-					in = new DataInputStream(fromClientToSRV_Socket.getInputStream());
-					byte side = in.readByte();
-					player = new Player(side);
-					onlinePlayer = new OnlinePlayer((byte) (side == 1 ? 0 : 1));
+		while ($running) {
+			// =========== Update Loop ==============
+			if ((double) getTimeSinceLastLogicStep() / (double) 1000 >= (double) 1 / (double) fps) {
+				update();
+				startTime = System.currentTimeMillis();
+				logicStep++;
+				if (System.currentTimeMillis() - initTime >= 1000) {
+					initTime = System.currentTimeMillis();
+					System.out.println("Logic Steps in 1 Second: " + logicStep + " , Render Steps: " + renderStep);
+					logicStep = 0;
+					renderStep = 0;
 				}
-				if (outData == null)
-					outData = new OutputData(out, player);
-				if (inData == null)
-					inData = new InputData(in, isHost);
-				wManager.addObject(player);
-				wManager.addObject(onlinePlayer);
-				wManager.addObject(ball);
-			} catch (IOException ex) {
-				ex.printStackTrace();
 			}
-		} else {
-			player = new Player((byte) 0);
-			ball = new Ball();
-			ai = new AI((byte) 1);
-			wManager.addObject(player);
-			wManager.addObject(ball);
-			wManager.addObject(ai);
-		}
-		startTime = System.currentTimeMillis();
-		try {
-			while ($running) {
-				// =========== Update Loop ==============
-				if ((double) getTimeSinceLastLogicStep() / (double) 1000 >= (double) 1 / (double) fps) {
-					update();
-					startTime = System.currentTimeMillis();
-					logicStep++;
-					if (System.currentTimeMillis() - initTime >= 1000) {
-						initTime = System.currentTimeMillis();
-						System.out.println("Logic Steps in 1 Second: " + logicStep + " , Render Steps: " + renderStep);
-						logicStep = 0;
-						renderStep = 0;
-					}
-				}
-				// ========== Render Loop ================
-				render();
-				renderStep++;
+			// ========== Render Loop ================
+			render();
+			renderStep++;
 
-				// ========== Close Game ===============
-				if (GLFW.glfwWindowShouldClose($wnd)) {
-					$running = false;
-					inData.interrupt();
-					outData.interrupt();
-				}
+			// ========== Close Game ===============
+			if (GLFW.glfwWindowShouldClose($wnd)) {
+				$running = false;
+				wManager.endGame();
 			}
-		} catch (Exception ex) {
-			inData.interrupt();
-			outData.interrupt();
-		} finally {
-			try {
-				inData.interrupt();
-				outData.interrupt();
-			} catch (NullPointerException ex) {
-			}
+
 		}
+		/*
+		 * if (isOnline) { System.out.println("Playing in online mode...");
+		 * System.out.println("We are " + (isHost ? "" : "not ") + "the host.");
+		 * try { DataOutputStream out; DataInputStream in; ball = new Ball(); if
+		 * (isHost) { hostToSRV_Socket = new ServerSocket(port);
+		 * System.out.println("Server socket connected, awaiting client...");
+		 * incomingClientToSRV_Socket = hostToSRV_Socket.accept();
+		 * System.out.println("Client Connected..."); out = new
+		 * DataOutputStream(incomingClientToSRV_Socket.getOutputStream()); in =
+		 * new DataInputStream(incomingClientToSRV_Socket.getInputStream());
+		 * byte side = (byte) new Random().nextInt(2); if (side > 1) side = 1;
+		 * player = new Player(side); onlinePlayer = new OnlinePlayer((byte)
+		 * (side == 1 ? 0 : 1)); out.writeByte((byte) (side == 1 ? 0 : 1));
+		 * out.flush(); outData = new OutputData(out, player, ball); } else {
+		 * fromClientToSRV_Socket = new Socket(getConnectionIP(), port);
+		 * System.out.println("Connected to server..."); out = new
+		 * DataOutputStream(fromClientToSRV_Socket.getOutputStream()); in = new
+		 * DataInputStream(fromClientToSRV_Socket.getInputStream()); byte side =
+		 * in.readByte(); player = new Player(side); onlinePlayer = new
+		 * OnlinePlayer((byte) (side == 1 ? 0 : 1)); } if (outData == null)
+		 * outData = new OutputData(out, player); if (inData == null) inData =
+		 * new InputData(in, isHost); wManager.addObject(player);
+		 * wManager.addObject(onlinePlayer); wManager.addObject(ball); } catch
+		 * (IOException ex) { ex.printStackTrace(); } } else { player = new
+		 * Player((byte) 0); ball = new Ball(); ai = new AI((byte) 1);
+		 * wManager.addObject(player); wManager.addObject(ball);
+		 * wManager.addObject(ai); } startTime = System.currentTimeMillis(); try
+		 * { while ($running) { // =========== Update Loop ============== if
+		 * ((double) getTimeSinceLastLogicStep() / (double) 1000 >= (double) 1 /
+		 * (double) fps) { update(); startTime = System.currentTimeMillis();
+		 * logicStep++; if (System.currentTimeMillis() - initTime >= 1000) {
+		 * initTime = System.currentTimeMillis();
+		 * System.out.println("Logic Steps in 1 Second: " + logicStep +
+		 * " , Render Steps: " + renderStep); logicStep = 0; renderStep = 0; } }
+		 * // ========== Render Loop ================ render(); renderStep++;
+		 * 
+		 * // ========== Close Game =============== if
+		 * (GLFW.glfwWindowShouldClose($wnd)) { $running = false;
+		 * inData.interrupt(); outData.interrupt(); } } } catch (Exception ex) {
+		 * inData.interrupt(); outData.interrupt(); } finally { try {
+		 * inData.interrupt(); outData.interrupt(); } catch
+		 * (NullPointerException ex) { } }
+		 */
 	}
 
 	// ======================== Online ======================

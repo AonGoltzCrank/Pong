@@ -1,7 +1,10 @@
-package pong.main;
+package pong.main.game_objects;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import pong.main.Collision;
+import pong.main.util.Rectangle;
 
 @SuppressWarnings("unused")
 public class PhysicsGameObject extends BaseGameObject {

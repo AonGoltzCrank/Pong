@@ -1,6 +1,10 @@
-package pong.main;
+package pong.main.game_objects;
 
 import org.lwjgl.opengl.GL11;
+
+import pong.main.Collision;
+import pong.main.WorldManager;
+import pong.main.util.Rectangle;
 
 public class AI extends PhysicsGameObject {
 

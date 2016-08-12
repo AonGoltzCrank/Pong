@@ -1,6 +1,8 @@
-package pong.main;
+package pong.main.game_objects;
 
 import org.lwjgl.opengl.GL11;
+
+import pong.main.util.Rectangle;
 
 public class OnlinePlayer extends PhysicsGameObject {
 	private static double x = 40;

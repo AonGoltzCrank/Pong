@@ -1,4 +1,4 @@
-package pong.main;
+package pong.main.util;
 
 public class Util {
 

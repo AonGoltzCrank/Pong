@@ -1,4 +1,4 @@
-package pong.main;
+package pong.main.game_objects;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,7 +6,9 @@ import java.util.Arrays;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
+import pong.main.Collision;
 import pong.main.comms.OutputData;
+import pong.main.util.Rectangle;
 
 public class Player extends PhysicsGameObject {
 

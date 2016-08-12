@@ -1,10 +1,13 @@
-package pong.main;
+package pong.main.game_objects;
 
-public class BaseGameObject {
+import pong.main.Collision;
+import pong.main.util.Rectangle;
+
+public class BaseGameObject extends BaseScreenObject {
 
 	protected static String $name = ">>uninitialized_BGO<<";
 
-	protected Rectangle hBox;
+	public Rectangle hBox;
 
 	public BaseGameObject() {
 		this(new Rectangle(0, 0, 0, 0));
@@ -14,9 +17,11 @@ public class BaseGameObject {
 		this.hBox = hBox;
 	}
 
+	@Override
 	public void render() {
 	}
 
+	@Override
 	public void update() {
 	}
 
@@ -31,6 +36,5 @@ public class BaseGameObject {
 	public void collision(Collision col) {
 
 	}
-
 
 }
