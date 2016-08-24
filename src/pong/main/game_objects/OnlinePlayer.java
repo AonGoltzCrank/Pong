@@ -39,6 +39,12 @@ public class OnlinePlayer extends PhysicsGameObject {
 	}
 
 	@Override
+	public void destroy() {
+		x = (side == 0 ? 40 : 740);
+		y = 300;
+	}
+
+	@Override
 	public String getName() {
 		return name;
 	}

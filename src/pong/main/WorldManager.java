@@ -3,14 +3,16 @@ package pong.main;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.lwjgl.opengl.GL11;
+
 import pong.main.ObjectInstantiator.GameObjects;
 import pong.main.game_objects.Ball;
 import pong.main.game_objects.BaseGameObject;
 import pong.main.game_objects.BaseScreenObject;
 import pong.main.game_objects.OnlinePlayer;
 import pong.main.game_objects.Player;
-import pong.main.screens.Screen;
-import pong.main.screens.ScreenText;
+import pong.main.game_objects.ScoreItem;
+import pong.main.game_objects.ScoreKeeper;
 import pong.main.util.Couple;
 import pong.main.util.KeyHandler;
 
@@ -21,6 +23,11 @@ public class WorldManager extends BaseScreenObject {
 	private ArrayList<BaseGameObject> wObjects = new ArrayList<BaseGameObject>();
 	private ArrayList<BaseScreenObject> sObjects = new ArrayList<BaseScreenObject>();
 	private KeyHandler keyHandler;
+
+	private GameObjects[] currentScreenObjects;
+
+	private byte playerSide;
+	private byte secPlayerSide;
 
 	// ================== SingleTon =======================
 	private WorldManager(KeyHandler kHandler) {
@@ -37,7 +44,7 @@ public class WorldManager extends BaseScreenObject {
 		if (wObjects.size() != 0)
 			for (BaseGameObject bgO : wObjects)
 				bgO.render();
-		else if (sObjects.size() != 0)
+		if (sObjects.size() != 0)
 			for (BaseScreenObject bsO : sObjects) {
 				bsO.render();
 			}
@@ -51,20 +58,19 @@ public class WorldManager extends BaseScreenObject {
 					((Player) bgO).input(keyHandler.getAllPressedKeys());
 				bgO.update();
 			}
-		else if (sObjects.size() != 0)
-			for (BaseScreenObject bsO : sObjects) {
-				if (bsO instanceof ScreenText)
-					bsO.update();
-			}
+	}
+
+	@Override
+	public void destroy() {
+		for (BaseGameObject object : wObjects)
+			object.destroy();
+		for (BaseScreenObject object : sObjects)
+			object.destroy();
+		wObjects.clear();
+		sObjects.clear();
 	}
 
 	// ================ BaseGameObjects Functions ===================
-	/**
-	 * Adds a new BaseGameObject to the world.<br>
-	 * Only way to get it rendered.
-	 * 
-	 * @param obj
-	 */
 	public void addObject(BaseGameObject obj) {
 		wObjects.add(obj);
 	}
@@ -130,34 +136,44 @@ public class WorldManager extends BaseScreenObject {
 			throw new RuntimeException("No object was found with the name: " + name);
 	}
 
-	// =================== World Managing ==================================
+	// =============================Create Game=============================
 
-	@SuppressWarnings("unchecked")
-	public void renderScreen(Screen newScreen) {
-		Class<? extends Object> screenArrayListType = newScreen.getArrayListType();
-		if (screenArrayListType == GameObjects.class) {
-			sObjects.clear();
-			wObjects.clear();
-			createItems((ArrayList<GameObjects>) newScreen.getList());
-		} else if (screenArrayListType == BaseScreenObject.class) {
-			sObjects.clear();
-			wObjects.clear();
-			sObjects = new ArrayList<BaseScreenObject>();
+	public void createScreen(boolean newScreen, GameObjects... objects) {
+		if (objects != null) {
+			currentScreenObjects = objects;
+			playerSide = 0;
+			secPlayerSide = 1;
+		}
+		for (int i = 0; i < wObjects.size(); i++) {
+			BaseGameObject object = wObjects.get(i);
+			object.destroy();
+			wObjects.set(i, null);
+		}
+		wObjects.clear();
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		byte side = (byte) new Random().nextInt(2);
+		for (GameObjects object : (objects == null ? currentScreenObjects : objects)) {
+			if (objects != null)
+				if (object == GameObjects.PLAYER)
+					playerSide = side;
+				else if (object == GameObjects.AI || object == GameObjects.ONLINE_PLAYER)
+					secPlayerSide = side;
+			BaseScreenObject obj = ObjectInstantiator.CreateNewObject(object, (objects == null
+					? (object == GameObjects.PLAYER ? playerSide : secPlayerSide) : (side == 0 ? side++ : side--)));
+			if (obj instanceof BaseGameObject)
+				wObjects.add((BaseGameObject) obj);
+		}
+		if (newScreen) {
+			sObjects.add(new ScoreItem(0, (byte) 10, playerSide));
+			sObjects.add(new ScoreItem(0, (byte) 10, secPlayerSide));
+
+			ScoreKeeper.getInstance((ScoreItem) sObjects.get((playerSide == 0 ? 0 : 1)),
+					(ScoreItem) sObjects.get((playerSide == 0 ? 1 : 0)));
 		}
 	}
 
-	private void createItems(ArrayList<GameObjects> list) {
-		byte side = (byte) new Random().nextInt(2);
-		if (list.contains(GameObjects.ONLINE_PLAYER)) {
-			
-		} else
-			for (GameObjects go : list) {
-				if (go == GameObjects.BALL) {
-					wObjects.add(ObjectInstantiator.CreateNewObject(go, -1));
-				} else {
-					wObjects.add(ObjectInstantiator.CreateNewObject(go, side));
-					side = (byte) (side == 0 ? 1 : 0);
-				}
-			}
+	public void restartCurrentScreen() {
+		createScreen(false, null);
 	}
+
 }

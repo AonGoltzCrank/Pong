@@ -1,11 +1,10 @@
 package pong.main.game_objects;
 
-public class BaseScreenObject {
+public abstract class BaseScreenObject {
 
-	public void render() {
-	}
+	public abstract void render();
 
-	public void update() {
-	}
+	public abstract void update();
 
+	public abstract void destroy();
 }

@@ -25,6 +25,10 @@ public class BaseGameObject extends BaseScreenObject {
 	public void update() {
 	}
 
+	@Override
+	public void destroy() {		
+	}
+	
 	public String getName() {
 		return $name;
 	}
@@ -34,7 +38,8 @@ public class BaseGameObject extends BaseScreenObject {
 	}
 
 	public void collision(Collision col) {
-
 	}
+
+
 
 }

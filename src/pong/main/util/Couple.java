@@ -1,6 +1,7 @@
 package pong.main.util;
 
 import java.util.ArrayList;
+import static pong.main.util.Util.nullCheck;
 
 public class Couple<T> extends ArrayList<T> implements Iterable<T> {
 
@@ -35,7 +36,7 @@ public class Couple<T> extends ArrayList<T> implements Iterable<T> {
 
 	@Override
 	public int size() {
-		return (isEmpty() ? 0 : (t1 != null && t2 != null ? 2 : 1));
+		return (isEmpty() ? 0 : (!nullCheck(t1) && !nullCheck(t2) ? 2 : 1));
 	}
 
 	@Override

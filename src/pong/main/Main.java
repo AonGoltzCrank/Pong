@@ -1,6 +1,7 @@
 package pong.main;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static pong.main.util.Util.nullCheck;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -17,6 +18,7 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 
+import pong.main.ObjectInstantiator.GameObjects;
 import pong.main.comms.InputData;
 import pong.main.comms.OutputData;
 import pong.main.game_objects.AI;
@@ -120,8 +122,7 @@ public class Main implements Runnable {
 		// >> Setting up the collisions manager.
 		cManager = CollisionsManager.getInstance(wManager);
 
-		wManager.renderScreen(ScreenManager.generateScreen(ScreenManager.Screens.MAINMENU));
-
+		wManager.createScreen(true, GameObjects.PLAYER, GameObjects.AI, GameObjects.BALL, GameObjects.COURT);
 	}
 
 	public void render() {
@@ -164,7 +165,6 @@ public class Main implements Runnable {
 			// ========== Close Game ===============
 			if (GLFW.glfwWindowShouldClose($wnd)) {
 				$running = false;
-				wManager.endGame();
 			}
 
 		}
@@ -219,7 +219,7 @@ public class Main implements Runnable {
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(new File("res\\isHost.bit")));
 			String data = "";
-			if ((data = reader.readLine()) != null) {
+			if (!nullCheck(data = reader.readLine())) {
 				if (data.equals("0"))
 					isHost = true;
 			} else {
@@ -230,23 +230,6 @@ public class Main implements Runnable {
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
-	}
-
-	private String getConnectionIP() {
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(new File("res\\conn.ip")));
-			String data = "";
-			if ((data = reader.readLine()) != null) {
-				reader.close();
-				return data;
-			} else {
-				reader.close();
-				throw new RuntimeException("No connection IP present.");
-			}
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		}
-		return "0.0.0.0";
 	}
 
 	public static void stop() {

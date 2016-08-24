@@ -41,6 +41,17 @@ public class AI extends PhysicsGameObject {
 	}
 
 	@Override
+	public void destroy() {
+		x = 390;
+		y = 290;
+		movAllowedUp = true;
+		movAllowedDown = true;
+		movUp = false;
+		movDown = false;
+		movSpeed = 0;
+	}
+
+	@Override
 	public void update() {
 		// =========== Logic ================
 

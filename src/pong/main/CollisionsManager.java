@@ -2,10 +2,13 @@ package pong.main;
 
 import java.util.ArrayList;
 
+import pong.main.game_objects.Ball;
 import pong.main.game_objects.BaseGameObject;
 import pong.main.game_objects.Court;
 import pong.main.game_objects.Player;
+import pong.main.game_objects.ScoreKeeper;
 import pong.main.util.Rectangle;
+import pong.main.util.Util;
 
 public class CollisionsManager extends BaseGameObject {
 
@@ -79,7 +82,6 @@ public class CollisionsManager extends BaseGameObject {
 		}
 		// ==============================AI=====================================
 		if (!Main.isOnline) {
-			System.out.println("Up");
 			if (ai.hBox.touchingEdges_Num(court.hBox, Rectangle.UP, false)) {
 				col = new Collision(ai, court);
 				col.addInstruction((byte) 0, Collision.VARIABLE, new Object[] { "movAllowedUp", false });
@@ -129,8 +131,10 @@ public class CollisionsManager extends BaseGameObject {
 				wManager.createCollision(onlinePlayer, ball, col.getCompleteObject());
 			}
 		}
-		// =========================World Manager==============================
-		if (!court.hBox.containing(ball.hBox)) {
+		// =========================Court==============================
+		if (court.hBox.not_containing_x(ball.hBox)) {
+			ScoreKeeper.pointTo(((Ball) ball).getPosition(Util.X) < 0 ? Util.RIGHT : Util.LEFT);
+			wManager.restartCurrentScreen();
 		}
 	}
 

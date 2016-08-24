@@ -246,6 +246,14 @@ public class Rectangle {
 				&& edgeCheck(o_edge1, f_edge1, (byte) 1) && edgeCheck(f_edge3, o_edge3, (byte) 1));
 	}
 
+	public boolean not_containing_x(Rectangle rect) {
+		double oXClose = this.edges.get(0)[0][0];
+		double oXFar = this.edges.get(2)[0][0];
+		double fXClose = rect.edges.get(0)[0][0];
+		double fXFar = rect.edges.get(2)[0][0];
+		return oXClose - fXFar > 30 || fXClose - oXFar > 30;
+	}
+
 	public double getDistanceFromCenterHit(Rectangle rect) {
 		Double[][] f_edge0 = rect.edges.get(0);
 		Double[][] o_edge0 = this.edges.get(0);

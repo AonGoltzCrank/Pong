@@ -1,5 +1,7 @@
 package pong.main.game_objects;
 
+import static pong.main.util.Util.nullCheck;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -7,8 +9,8 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 import pong.main.Collision;
-import pong.main.comms.OutputData;
 import pong.main.util.Rectangle;
+import pong.main.util.Util;
 
 public class Player extends PhysicsGameObject {
 
@@ -49,7 +51,7 @@ public class Player extends PhysicsGameObject {
 
 	@Override
 	public void update() {
-		if (keysPressed != null && !keysPressed.isEmpty()) {
+		if (!nullCheck(keysPressed) && !keysPressed.isEmpty()) {
 			boolean upPressed = (side == 0 ? keysPressed.contains(GLFW.GLFW_KEY_W)
 					: keysPressed.contains(GLFW.GLFW_KEY_UP));
 			boolean downPressed = (side == 0 ? keysPressed.contains(GLFW.GLFW_KEY_S)
@@ -64,6 +66,16 @@ public class Player extends PhysicsGameObject {
 		y += movSpeed;
 
 		hBox.updateCoords(x, y);
+	}
+
+	@Override
+	public void destroy() {
+		x = (side == 0 ? 40 : 740);
+		y = 200;
+		keysPressed.clear();
+		movAllowedUp = true;
+		movAllowedDown = true;
+		movSpeed = 0;
 	}
 
 	public void input(Integer[] pressedKeys) {
@@ -110,9 +122,9 @@ public class Player extends PhysicsGameObject {
 	}
 
 	public double getPosition(byte type) {
-		if (type == OutputData.X)
+		if (type == Util.X)
 			return x;
-		else if (type == OutputData.Y)
+		else if (type == Util.Y)
 			return y;
 		throw new IllegalArgumentException("type must be 0 or 1.");
 	}

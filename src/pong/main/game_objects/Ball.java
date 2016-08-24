@@ -3,12 +3,13 @@ package pong.main.game_objects;
 import static pong.main.util.Util.getAngle;
 
 import java.awt.Point;
+import java.util.Random;
 
 import org.lwjgl.opengl.GL11;
 
 import pong.main.Collision;
-import pong.main.comms.OutputData;
 import pong.main.util.Rectangle;
+import pong.main.util.Util;
 
 public class Ball extends PhysicsGameObject {
 
@@ -26,8 +27,14 @@ public class Ball extends PhysicsGameObject {
 	private long timer = 0;
 
 	public Ball() {
+		this(new Random().nextInt(181));
+	}
+
+	public Ball(double deg) {
 		super(new Rectangle(x, y, (int) width, (int) height));
 		timer = System.currentTimeMillis();
+		movSpeedy = (double) (Math.sin(Math.toRadians(deg)) * maxSpeed);
+		movSpeedx = movSpeedx * (new Random().nextInt(2) == 0 ? 1 : -1);
 	}
 
 	@Override
@@ -48,6 +55,15 @@ public class Ball extends PhysicsGameObject {
 			GL11.glVertex3d(x + width, y, 0);
 		}
 		GL11.glEnd();
+	}
+
+	@Override
+	public void destroy() {
+		x = 390;
+		y = 290;
+		maxSpeed = 3;
+		movSpeedx = -3;
+		movSpeedy = 0;
 	}
 
 	@Override
@@ -126,9 +142,9 @@ public class Ball extends PhysicsGameObject {
 	}
 
 	public double getPosition(byte type) {
-		if (type == OutputData.X)
+		if (type == Util.X)
 			return x;
-		else if (type == OutputData.Y)
+		else if (type == Util.Y)
 			return y;
 		throw new IllegalArgumentException("type must be 0 or 1.");
 	}

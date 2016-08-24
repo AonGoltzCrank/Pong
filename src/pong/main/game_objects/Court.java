@@ -41,6 +41,13 @@ public class Court extends BaseGameObject {
 	}
 
 	@Override
+	public void destroy() {
+		x = 395;
+		y = 0;
+
+	}
+
+	@Override
 	public String getName() {
 		return name;
 	}
@@ -55,5 +62,4 @@ public class Court extends BaseGameObject {
 		return (objHigh > (dir == TOP_BOT ? hBox.getHighestY() : hBox.getFurthestX())
 				|| objLow < (dir == TOP_BOT ? hBox.getLowestY() : hBox.getClosestX()));
 	}
-
 }
