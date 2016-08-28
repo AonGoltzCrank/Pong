@@ -88,7 +88,6 @@ public class ScoreItem extends BaseScreenObject {
 					throw new IllegalArgumentException("Can't add more than 5 elements");
 			}
 		};
-
 	}
 
 	public void point(int i) {

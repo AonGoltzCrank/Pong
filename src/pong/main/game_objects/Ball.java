@@ -8,6 +8,7 @@ import java.util.Random;
 import org.lwjgl.opengl.GL11;
 
 import pong.main.Collision;
+import pong.main.Main;
 import pong.main.util.Rectangle;
 import pong.main.util.Util;
 
@@ -39,8 +40,10 @@ public class Ball extends PhysicsGameObject {
 
 	@Override
 	public void update() {
-		x += movSpeedx;
-		y += movSpeedy;
+		if (Main.isHost || !Main.isOnline) {
+			x += movSpeedx;
+			y += movSpeedy;
+		}
 		hBox.updateCoords(x, y);
 	}
 
@@ -63,7 +66,8 @@ public class Ball extends PhysicsGameObject {
 		y = 290;
 		maxSpeed = 3;
 		movSpeedx = -3;
-		movSpeedy = 0;
+		movSpeedy = (double) (Math.sin(Math.toRadians(new Random().nextInt(181))) * maxSpeed);
+		movSpeedx = movSpeedx * (new Random().nextInt(2) == 0 ? 1 : -1);
 	}
 
 	@Override

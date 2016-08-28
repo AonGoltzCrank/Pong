@@ -5,6 +5,8 @@ import java.io.IOException;
 
 import pong.main.Main;
 import pong.main.WorldManager;
+import pong.main.game_objects.ScoreKeeper;
+import pong.main.util.Util;
 
 public class InputData extends Thread {
 
@@ -26,8 +28,13 @@ public class InputData extends Thread {
 				double ballX = in.readDouble();
 				double ballY = in.readDouble();
 				WorldManager.getInstance(null).updateObjectLocation("OnlinePlayer", otherPlayerPosX, otherPlayerPosY);
-				if (!isHost)
+				if (!isHost) {
+					int scoreRight = in.readInt();
+					int scoreLeft = in.readInt();
 					WorldManager.getInstance(null).updateObjectLocation("Ball", ballX, ballY);
+					ScoreKeeper.setPoint(Util.LEFT, scoreLeft);
+					ScoreKeeper.setPoint(Util.RIGHT, scoreRight);
+				}
 			} catch (IOException ex) {
 				System.out.println("Stopping comms...");
 				Main.stop();

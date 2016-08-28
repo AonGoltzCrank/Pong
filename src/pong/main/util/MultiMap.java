@@ -43,7 +43,7 @@ public class MultiMap<A, B> {
 	}
 
 	public MultiMap(A a, B b) {
-		this();
+		this(10);
 		put(a, b);
 	}
 

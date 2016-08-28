@@ -1,11 +1,19 @@
 package pong.main;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Random;
 
 import org.lwjgl.opengl.GL11;
 
 import pong.main.ObjectInstantiator.GameObjects;
+import pong.main.comms.InputData;
+import pong.main.comms.OutputData;
 import pong.main.game_objects.Ball;
 import pong.main.game_objects.BaseGameObject;
 import pong.main.game_objects.BaseScreenObject;
@@ -28,6 +36,12 @@ public class WorldManager extends BaseScreenObject {
 
 	private byte playerSide;
 	private byte secPlayerSide;
+
+	private InputData inData;
+	private OutputData outData;
+	private ServerSocket hostToSRV_Socket;
+	private Socket fromClientToSRV_Socket;
+	private Socket incomingClientToSRV_Socket;
 
 	// ================== SingleTon =======================
 	private WorldManager(KeyHandler kHandler) {
@@ -138,7 +152,51 @@ public class WorldManager extends BaseScreenObject {
 
 	// =============================Create Game=============================
 
-	public void createScreen(boolean newScreen, GameObjects... objects) {
+	public void createOnlineGame(boolean isHost, InetAddress addr, GameObjects... objects) {
+		byte side = 0;
+		DataOutputStream out = null;
+		DataInputStream in = null;
+		try {
+
+			if (isHost) {
+				hostToSRV_Socket = new ServerSocket(4242);
+				incomingClientToSRV_Socket = hostToSRV_Socket.accept();
+				out = new DataOutputStream(incomingClientToSRV_Socket.getOutputStream());
+				in = new DataInputStream(incomingClientToSRV_Socket.getInputStream());
+				out.writeByte(new Random().nextInt(100) % 2 == 0 ? ++side : side);
+				out.flush();
+				side = side == 1 ? (byte) 0 : (byte) 1;
+			} else {
+				fromClientToSRV_Socket = new Socket(addr, 4242);
+				out = new DataOutputStream(fromClientToSRV_Socket.getOutputStream());
+				in = new DataInputStream(fromClientToSRV_Socket.getInputStream());
+				side = in.readByte();
+			}
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		wObjects.clear();
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		for (GameObjects object : objects) {
+			BaseScreenObject obj = ObjectInstantiator.CreateNewObject(object, (object == GameObjects.PLAYER ? side
+					: (object == GameObjects.ONLINE_PLAYER ? (side == 0 ? (byte) 1 : (byte) 0) : (byte) 0)));
+			if (obj instanceof BaseGameObject)
+				wObjects.add((BaseGameObject) obj);
+		}
+		sObjects.add(new ScoreItem(0, (byte) 10, side));
+		sObjects.add(new ScoreItem(0, (byte) 10, (side == 0 ? (byte) 1 : (byte) 0)));
+		ScoreKeeper.getInstance((ScoreItem) sObjects.get((side == 0 ? 0 : 1)),
+				(ScoreItem) sObjects.get((side == 0 ? 1 : 0)));
+		if (isHost)
+			outData = new OutputData(out, (Player) getObject("Player"), (Ball) getObject("Ball"),
+					ScoreKeeper.getInstance((ScoreItem[]) null));
+		else
+			outData = new OutputData(out, (Player) getObject("Player"), null, null);
+		inData = new InputData(in, isHost);
+
+	}
+
+	public void createOfflineGame(boolean newScreen, GameObjects... objects) {
 		if (objects != null) {
 			currentScreenObjects = objects;
 			playerSide = 0;
@@ -156,7 +214,7 @@ public class WorldManager extends BaseScreenObject {
 			if (objects != null)
 				if (object == GameObjects.PLAYER)
 					playerSide = side;
-				else if (object == GameObjects.AI || object == GameObjects.ONLINE_PLAYER)
+				else if (object == GameObjects.AI)
 					secPlayerSide = side;
 			BaseScreenObject obj = ObjectInstantiator.CreateNewObject(object, (objects == null
 					? (object == GameObjects.PLAYER ? playerSide : secPlayerSide) : (side == 0 ? side++ : side--)));
@@ -173,7 +231,22 @@ public class WorldManager extends BaseScreenObject {
 	}
 
 	public void restartCurrentScreen() {
-		createScreen(false, null);
+		if (!Main.isOnline)
+			createOfflineGame(false, (GameObjects[]) null);
+		else if (Main.isHost && Main.isOnline) {
+			getObject("Ball").destroy();
+			getObject("Player").destroy();
+		} else if (Main.isOnline && !Main.isHost) {
+			getObject("Player").destroy();
+		}
+	}
+
+	public InputData getInputThread() {
+		return inData;
+	}
+
+	public OutputData getOutputThread() {
+		return outData;
 	}
 
 }

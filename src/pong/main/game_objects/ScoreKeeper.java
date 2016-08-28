@@ -15,7 +15,8 @@ public final class ScoreKeeper {
 	}
 
 	private ScoreKeeper(ScoreItem... displays) {
-		scores = displays;
+		if (displays != null)
+			scores = displays;
 	}
 
 	public static void pointTo(byte side) {
@@ -34,5 +35,18 @@ public final class ScoreKeeper {
 	public static void reset() {
 		score_left = 0;
 		score_right = 0;
+	}
+
+	public static void setPoint(byte side, int score) {
+		if (side == Util.LEFT) {
+			score_left = score;
+		} else if (side == Util.RIGHT) {
+			score_right = score;
+		}
+		scores[side].point(side == Util.LEFT ? score_left : score_right);
+	}
+
+	public int getScore(byte side) {
+		return (side == Util.LEFT ? score_left : score_right);
 	}
 }

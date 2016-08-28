@@ -1,17 +1,28 @@
 package pong.main;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
-import static pong.main.util.Util.nullCheck;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Random;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -19,12 +30,6 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 
 import pong.main.ObjectInstantiator.GameObjects;
-import pong.main.comms.InputData;
-import pong.main.comms.OutputData;
-import pong.main.game_objects.AI;
-import pong.main.game_objects.Ball;
-import pong.main.game_objects.OnlinePlayer;
-import pong.main.game_objects.Player;
 import pong.main.util.KeyHandler;
 
 public class Main implements Runnable {
@@ -41,10 +46,6 @@ public class Main implements Runnable {
 
 	public static KeyHandler $keyHandler;
 
-	private Player player;
-	private AI ai;
-	private Ball ball;
-
 	private final int fps = 120;
 	private long startTime;
 	private long initTime = System.currentTimeMillis();
@@ -52,28 +53,28 @@ public class Main implements Runnable {
 	private int renderStep = 0;
 
 	// =================== Online ================
-	private boolean isHost = false;
+	public static boolean isHost = false;
 	public static boolean isOnline = false;
+	private InetAddress ip;
 
-	private ServerSocket hostToSRV_Socket;
-	private Socket fromClientToSRV_Socket;
-	private Socket incomingClientToSRV_Socket;
+	// ============= Settings Frame ==============
 
-	private final int port = 4242;
-
-	private OnlinePlayer onlinePlayer;
-
-	private OutputData outData;
-	private InputData inData;
+	private static SettingsFrame frame;
 
 	public static void main(String[] args) {
-		Main game = new Main(false);
-		game.init_Thread();
+		frame = new SettingsFrame();
 	}
 
-	public Main(boolean isOnline) {
-		if (Main.isOnline = isOnline)
-			determineHost();
+	public Main() {
+	}
+
+	public Main(boolean isOnline, boolean isHost, InetAddress ip) {
+		if (isOnline) {
+			Main.isOnline = isOnline;
+			Main.isHost = isHost;
+			if (!isHost)
+				this.ip = ip;
+		}
 	}
 
 	public void init_Thread() {
@@ -122,7 +123,11 @@ public class Main implements Runnable {
 		// >> Setting up the collisions manager.
 		cManager = CollisionsManager.getInstance(wManager);
 
-		wManager.createScreen(true, GameObjects.PLAYER, GameObjects.AI, GameObjects.BALL, GameObjects.COURT);
+		if (!isOnline)
+			wManager.createOfflineGame(true, GameObjects.PLAYER, GameObjects.AI, GameObjects.BALL, GameObjects.COURT);
+		else
+			wManager.createOnlineGame(isHost, ip, GameObjects.PLAYER, GameObjects.ONLINE_PLAYER, GameObjects.BALL,
+					GameObjects.COURT);
 	}
 
 	public void render() {
@@ -165,9 +170,11 @@ public class Main implements Runnable {
 			// ========== Close Game ===============
 			if (GLFW.glfwWindowShouldClose($wnd)) {
 				$running = false;
+				frame.setVisible(true);
 			}
 
 		}
+
 		/*
 		 * if (isOnline) { System.out.println("Playing in online mode...");
 		 * System.out.println("We are " + (isHost ? "" : "not ") + "the host.");
@@ -213,26 +220,217 @@ public class Main implements Runnable {
 		 */
 	}
 
-	// ======================== Online ======================
+	public static void stop() {
+		$running = false;
+	}
 
-	private void determineHost() {
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(new File("res\\isHost.bit")));
-			String data = "";
-			if (!nullCheck(data = reader.readLine())) {
-				if (data.equals("0"))
-					isHost = true;
+}
+
+// =================== Settings Frame =====================
+
+class SettingsFrame implements ActionListener {
+
+	// =========== Constants ===========
+	private final String FRAME_NAME = "Pong - Settings";
+	private final int WIDTH = 500;
+	private final int HEIGHT = 200;
+	private final Border BORDER = BorderFactory.createLineBorder(Color.LIGHT_GRAY);
+
+	// =========== UI Elements ===========
+	private JFrame window;
+	private JPanel onlineSettings;
+	private JPanel offlineSettings;
+	private JPanel settings;
+	private JPanel playPanel;
+	private JButton play;
+	private JToggleButton isOnline;
+	private JToggleButton isHost;
+	private JTextField ipAddr;
+	private JRadioButtonController aiDifficulty;
+
+	// =========== UI Data ===========
+	private int x;
+	private int y;
+
+	public SettingsFrame() {
+		setBounds();
+
+		window = new JFrame(FRAME_NAME);
+
+		initUI();
+
+		setupInfo();
+
+		addUI();
+
+		setListeners();
+
+		setVisible(true);
+		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		window.setBounds(x, y, WIDTH, HEIGHT);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		Object source = e.getSource();
+		if (source == isOnline) {
+			boolean selected = isOnline.isSelected();
+			isHost.setEnabled(selected);
+			ipAddr.setEnabled(selected);
+			offlineSettings.setEnabled(!selected);
+			aiDifficulty.setEnabled(!selected);
+		} else if (source == isHost) {
+			boolean selected = isHost.isSelected();
+			ipAddr.setEnabled(!selected);
+		} else if (source == aiDifficulty.get(0)) {
+			boolean selected = aiDifficulty.get(0).isSelected();
+			if (selected)
+				aiDifficulty.setSelected(0);
+		} else if (source == aiDifficulty.get(1)) {
+			boolean selected = aiDifficulty.get(1).isSelected();
+			if (selected)
+				aiDifficulty.setSelected(1);
+		} else if (source == aiDifficulty.get(2)) {
+			boolean selected = aiDifficulty.get(2).isSelected();
+			if (selected)
+				aiDifficulty.setSelected(2);
+		} else if (source == play) {
+			setVisible(false);
+			if (!isOnline.isSelected()) {
+				new Main(false, false, null).init_Thread();
 			} else {
-				reader.close();
-				throw new RuntimeException("No host byte present.");
+				try {
+					new Main(true, isHost.isSelected(), InetAddress.getByName(ipAddr.getText())).init_Thread();
+					;
+				} catch (UnknownHostException e1) {
+					e1.printStackTrace();
+				}
 			}
-			reader.close();
-		} catch (IOException ex) {
-			ex.printStackTrace();
 		}
 	}
 
-	public static void stop() {
-		$running = false;
+	public void setVisible(boolean flag) {
+		window.setVisible(flag);
+	}
+
+	private void initUI() {
+		play = new JButton();
+		isOnline = new JToggleButton();
+		isHost = new JToggleButton();
+		ipAddr = new JTextField();
+		aiDifficulty = new JRadioButtonController(3);
+
+		onlineSettings = new JPanel();
+		offlineSettings = new JPanel();
+		settings = new JPanel();
+		playPanel = new JPanel();
+
+	}
+
+	private void setupInfo() {
+		isHost.setEnabled(false);
+		ipAddr.setEnabled(false);
+
+		isOnline.setText("Playing Online?");
+		isHost.setText("You're the host?");
+		ipAddr.setPreferredSize(new Dimension(10, 50));
+
+		aiDifficulty.get(0).setText("AI Level - Easy");
+		aiDifficulty.get(1).setText("AI Level - Medium");
+		aiDifficulty.get(2).setText("AI Level - Hard");
+		play.setText("Start Pong");
+
+		aiDifficulty.get(0).setHorizontalAlignment(JRadioButton.CENTER);
+		aiDifficulty.get(1).setHorizontalAlignment(JRadioButton.CENTER);
+		aiDifficulty.get(2).setHorizontalAlignment(JRadioButton.CENTER);
+
+		onlineSettings.setLayout(new GridLayout(3, 1, 5, 5));
+		onlineSettings.setPreferredSize(new Dimension(250, 50));
+		offlineSettings.setLayout(new GridLayout(3, 1, 5, 5));
+		offlineSettings.setPreferredSize(new Dimension(250, 50));
+
+		TitledBorder on_border = new TitledBorder("Online Settings");
+		on_border.setTitleJustification(TitledBorder.LEFT);
+		on_border.setTitlePosition(TitledBorder.TOP);
+		TitledBorder off_border = new TitledBorder("Offline Settings");
+		off_border.setTitleJustification(TitledBorder.LEFT);
+		off_border.setTitlePosition(TitledBorder.TOP);
+
+		onlineSettings.setBorder(on_border);
+		offlineSettings.setBorder(off_border);
+		settings.setLayout(new BoxLayout(settings, BoxLayout.X_AXIS));
+		settings.setPreferredSize(new Dimension(500, 100));
+		settings.setBorder(BORDER);
+		playPanel.setLayout(new BorderLayout());
+		window.setLayout(new BoxLayout(window.getContentPane(), BoxLayout.PAGE_AXIS));
+	}
+
+	private void addUI() {
+		onlineSettings.add(isOnline);
+		onlineSettings.add(isHost);
+		onlineSettings.add(ipAddr);
+
+		for (int i = 0; i < aiDifficulty.size(); i++)
+			offlineSettings.add(aiDifficulty.get(i));
+
+		settings.add(onlineSettings);
+		settings.add(offlineSettings);
+
+		playPanel.add(play, BorderLayout.CENTER);
+
+		window.add(settings);
+		window.add(playPanel);
+
+		window.pack();
+	}
+
+	private void setListeners() {
+		isOnline.addActionListener(this);
+		isHost.addActionListener(this);
+		aiDifficulty.setActionListener(this);
+		play.addActionListener(this);
+	}
+
+	private void setBounds() {
+		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+		x = (dim.width - WIDTH) / 2;
+		y = (dim.height - HEIGHT) / 2;
+	}
+
+	private final class JRadioButtonController {
+
+		private ArrayList<JRadioButton> buttons = new ArrayList<>();
+
+		public JRadioButtonController(int amount) {
+			for (int i = 0; i < amount; i++)
+				buttons.add(new JRadioButton());
+			buttons.get(0).setSelected(true);
+		}
+
+		public void setActionListener(ActionListener listener) {
+			for (JRadioButton btn : buttons)
+				btn.addActionListener(listener);
+		}
+
+		public void setEnabled(boolean flag) {
+			for (JRadioButton btn : buttons)
+				btn.setEnabled(flag);
+		}
+
+		public void setSelected(int index) {
+			if (index < 0 || index > buttons.size())
+				throw new IndexOutOfBoundsException();
+			for (int i = 0; i < buttons.size(); i++)
+				buttons.get(i).setSelected(i == index);
+		}
+
+		public int size() {
+			return buttons.size();
+		}
+
+		public JRadioButton get(int index) {
+			return buttons.get(index);
+		}
+
 	}
 }
