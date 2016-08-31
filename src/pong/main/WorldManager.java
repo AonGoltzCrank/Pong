@@ -185,8 +185,8 @@ public class WorldManager extends BaseScreenObject {
 		}
 		sObjects.add(new ScoreItem(0, (byte) 10, side));
 		sObjects.add(new ScoreItem(0, (byte) 10, (side == 0 ? (byte) 1 : (byte) 0)));
-		ScoreKeeper.getInstance((ScoreItem) sObjects.get((side == 0 ? 0 : 1)),
-				(ScoreItem) sObjects.get((side == 0 ? 1 : 0)));
+		ScoreKeeper.getInstance((ScoreItem) sObjects.get((side == 0 ? (isHost ? 0 : 1) : (isHost ? 1 : 0))),
+				(ScoreItem) sObjects.get((side == 0 ? (isHost ? 1 : 0) : (isHost ? 0 : 1))));
 		if (isHost)
 			outData = new OutputData(out, (Player) getObject("Player"), (Ball) getObject("Ball"),
 					ScoreKeeper.getInstance((ScoreItem[]) null));

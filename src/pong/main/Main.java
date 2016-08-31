@@ -17,10 +17,13 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 
@@ -30,6 +33,8 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 
 import pong.main.ObjectInstantiator.GameObjects;
+import pong.main.game_objects.ScoreItem;
+import pong.main.game_objects.ScoreKeeper;
 import pong.main.util.KeyHandler;
 
 public class Main implements Runnable {
@@ -51,6 +56,9 @@ public class Main implements Runnable {
 	private long initTime = System.currentTimeMillis();
 	private int logicStep = 0;
 	private int renderStep = 0;
+
+	private int maxScore;
+	private int maxSet;
 
 	// =================== Online ================
 	public static boolean isHost = false;
@@ -77,8 +85,10 @@ public class Main implements Runnable {
 		}
 	}
 
-	public void init_Thread() {
+	public void init_Thread(int scoreLimit, int setLimit) {
 		// >> Setting up the game thread and starting it.
+		maxScore = scoreLimit;
+		maxSet = setLimit;
 		Thread gameThread = new Thread(this, title);
 		gameThread.start();
 	}
@@ -121,13 +131,18 @@ public class Main implements Runnable {
 			wManager.setKeyHandler($keyHandler);
 
 		// >> Setting up the collisions manager.
-		cManager = CollisionsManager.getInstance(wManager);
+		//cManager = CollisionsManager.getInstance(wManager);
 
-		if (!isOnline)
-			wManager.createOfflineGame(true, GameObjects.PLAYER, GameObjects.AI, GameObjects.BALL, GameObjects.COURT);
-		else
-			wManager.createOnlineGame(isHost, ip, GameObjects.PLAYER, GameObjects.ONLINE_PLAYER, GameObjects.BALL,
-					GameObjects.COURT);
+		/*
+		 * if (!isOnline) wManager.createOfflineGame(true, GameObjects.PLAYER,
+		 * GameObjects.AI, GameObjects.BALL, GameObjects.COURT); else
+		 * wManager.createOnlineGame(isHost, ip, GameObjects.PLAYER,
+		 * GameObjects.ONLINE_PLAYER, GameObjects.BALL, GameObjects.COURT);
+		 */
+
+		wManager.createOfflineGame(true, GameObjects.COURT);
+
+		ScoreKeeper.getInstance((ScoreItem[]) null).setGameLimits(maxScore, maxSet);
 	}
 
 	public void render() {
@@ -138,7 +153,7 @@ public class Main implements Runnable {
 
 	public void update() {
 		GLFW.glfwPollEvents();
-		cManager.update();
+		//cManager.update();
 		wManager.update();
 	}
 
@@ -170,6 +185,10 @@ public class Main implements Runnable {
 			// ========== Close Game ===============
 			if (GLFW.glfwWindowShouldClose($wnd)) {
 				$running = false;
+				if (isOnline) {
+					wManager.getInputThread().interrupt();
+					wManager.getOutputThread().interrupt();
+				}
 				frame.setVisible(true);
 			}
 
@@ -224,6 +243,10 @@ public class Main implements Runnable {
 		$running = false;
 	}
 
+	public static void stop(byte winningSide) {
+
+	}
+
 }
 
 // =================== Settings Frame =====================
@@ -233,20 +256,33 @@ class SettingsFrame implements ActionListener {
 	// =========== Constants ===========
 	private final String FRAME_NAME = "Pong - Settings";
 	private final int WIDTH = 500;
-	private final int HEIGHT = 200;
+	private final int HEIGHT = 250;
 	private final Border BORDER = BorderFactory.createLineBorder(Color.LIGHT_GRAY);
 
 	// =========== UI Elements ===========
+
+	// Containers:
 	private JFrame window;
+	private JPanel playPanel;
+
 	private JPanel onlineSettings;
 	private JPanel offlineSettings;
 	private JPanel settings;
-	private JPanel playPanel;
+
+	private JPanel gameSettings;
+	private JPanel scores;
+	private JPanel sets;
+
+	// Elements:
 	private JButton play;
 	private JToggleButton isOnline;
 	private JToggleButton isHost;
 	private JTextField ipAddr;
 	private JRadioButtonController aiDifficulty;
+	private JSpinner score_limit;
+	private JLabel score_label;
+	private JSpinner set_limit;
+	private JLabel set_label;
 
 	// =========== UI Data ===========
 	private int x;
@@ -279,9 +315,19 @@ class SettingsFrame implements ActionListener {
 			ipAddr.setEnabled(selected);
 			offlineSettings.setEnabled(!selected);
 			aiDifficulty.setEnabled(!selected);
+			score_limit.setEnabled(!selected);
+			set_limit.setEnabled(!selected);
+			score_label.setEnabled(!selected);
+			set_label.setEnabled(!selected);
+			gameSettings.setEnabled(!selected);
 		} else if (source == isHost) {
 			boolean selected = isHost.isSelected();
 			ipAddr.setEnabled(!selected);
+			gameSettings.setEnabled(selected);
+			score_limit.setEnabled(selected);
+			set_limit.setEnabled(selected);
+			score_label.setEnabled(selected);
+			set_label.setEnabled(selected);
 		} else if (source == aiDifficulty.get(0)) {
 			boolean selected = aiDifficulty.get(0).isSelected();
 			if (selected)
@@ -296,16 +342,17 @@ class SettingsFrame implements ActionListener {
 				aiDifficulty.setSelected(2);
 		} else if (source == play) {
 			setVisible(false);
+			Main main = null;
 			if (!isOnline.isSelected()) {
-				new Main(false, false, null).init_Thread();
+				main = new Main(false, false, null);
 			} else {
 				try {
-					new Main(true, isHost.isSelected(), InetAddress.getByName(ipAddr.getText())).init_Thread();
-					;
+					main = new Main(true, isHost.isSelected(), InetAddress.getByName(ipAddr.getText()));
 				} catch (UnknownHostException e1) {
 					e1.printStackTrace();
 				}
 			}
+			main.init_Thread((int) score_limit.getModel().getValue(), (int) set_limit.getModel().getValue());
 		}
 	}
 
@@ -320,11 +367,22 @@ class SettingsFrame implements ActionListener {
 		ipAddr = new JTextField();
 		aiDifficulty = new JRadioButtonController(3);
 
+		score_limit = new JSpinner(new SpinnerNumberModel(9, 1, 9, 1));
+		set_limit = new JSpinner(new SpinnerNumberModel(1, 1, 9, 1));
+
+		score_label = new JLabel();
+		set_label = new JLabel();
+
 		onlineSettings = new JPanel();
 		offlineSettings = new JPanel();
 		settings = new JPanel();
+
 		playPanel = new JPanel();
 
+		scores = new JPanel();
+		sets = new JPanel();
+
+		gameSettings = new JPanel();
 	}
 
 	private void setupInfo() {
@@ -338,6 +396,10 @@ class SettingsFrame implements ActionListener {
 		aiDifficulty.get(0).setText("AI Level - Easy");
 		aiDifficulty.get(1).setText("AI Level - Medium");
 		aiDifficulty.get(2).setText("AI Level - Hard");
+
+		score_label.setText("How many points per set: ");
+		set_label.setText("How many sets per this single game: ");
+
 		play.setText("Start Pong");
 
 		aiDifficulty.get(0).setHorizontalAlignment(JRadioButton.CENTER);
@@ -349,15 +411,25 @@ class SettingsFrame implements ActionListener {
 		offlineSettings.setLayout(new GridLayout(3, 1, 5, 5));
 		offlineSettings.setPreferredSize(new Dimension(250, 50));
 
+		scores.setLayout(new GridLayout(1, 2, 5, 5));
+		scores.setPreferredSize(new Dimension(500, 25));
+		sets.setLayout(new GridLayout(1, 2, 5, 5));
+		sets.setPreferredSize(new Dimension(500, 25));
+
 		TitledBorder on_border = new TitledBorder("Online Settings");
 		on_border.setTitleJustification(TitledBorder.LEFT);
 		on_border.setTitlePosition(TitledBorder.TOP);
 		TitledBorder off_border = new TitledBorder("Offline Settings");
 		off_border.setTitleJustification(TitledBorder.LEFT);
 		off_border.setTitlePosition(TitledBorder.TOP);
+		TitledBorder score_info = new TitledBorder("Game Settings");
+		score_info.setTitleJustification(TitledBorder.LEFT);
+		score_info.setTitlePosition(TitledBorder.TOP);
 
 		onlineSettings.setBorder(on_border);
 		offlineSettings.setBorder(off_border);
+		gameSettings.setBorder(score_info);
+		gameSettings.setLayout(new GridLayout(2, 1, 5, 5));
 		settings.setLayout(new BoxLayout(settings, BoxLayout.X_AXIS));
 		settings.setPreferredSize(new Dimension(500, 100));
 		settings.setBorder(BORDER);
@@ -376,10 +448,21 @@ class SettingsFrame implements ActionListener {
 		settings.add(onlineSettings);
 		settings.add(offlineSettings);
 
+		scores.add(score_label);
+		scores.add(score_limit);
+		sets.add(set_label);
+		sets.add(set_limit);
+
+		gameSettings.add(scores);
+		gameSettings.add(sets);
+
 		playPanel.add(play, BorderLayout.CENTER);
 
 		window.add(settings);
+		window.add(gameSettings);
 		window.add(playPanel);
+
+		window.setResizable(false);
 
 		window.pack();
 	}
